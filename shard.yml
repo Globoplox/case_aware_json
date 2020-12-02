@@ -1,0 +1,9 @@
+name: case_aware_json
+version: 1.0.0
+
+authors:
+  - globoplox globoplox@gmail.com
+
+crystal: 0.35.1
+
+license: MIT
