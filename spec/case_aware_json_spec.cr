@@ -6,6 +6,15 @@ class Test
   def initialize(@test_property) end
 end
 
+class NestedTest
+  include JSON::Serializable
+  property nested_test : Test
+  property many_nested_test = [] of Test
+  def initialize(@nested_test)
+    many_nested_test << @nested_test
+  end
+end
+
 describe CAJ do
 
   it "can serialize to camelcase" do
@@ -54,6 +63,26 @@ describe CAJ do
 
   it "can deserilize with symbole case param" do
     Test.from_json(%({"testProperty": "camel"}), case: :camel).test_property.should eq("camel")
+  end
+
+  it "can serialize nested serilizable" do
+    JSON.parse(NestedTest.new(Test.new("camel")).to_json(case: CAJ::Cases::Camel)).tap do |json|
+      json["nestedTest"]?.try &.as_h?.try &.["testProperty"]?.should eq("camel")
+      json["manyNestedTest"]?.try &.as_a?.try &.first?.try &.as_h?.try &.["testProperty"]?.should eq("camel")
+    end
+  end
+
+  it "can deserialize nested serilizable" do
+    Test.from_json(%({"test_property": "snake"}), case: CAJ::Cases::Snake).test_property.should eq("snake")
+    NestedTest.from_json(%({"nestedTest": {"testProperty": "camel"}, "manyNestedTest": [{"testProperty": "camel"}]}), case: :camel).tap do |object|
+      object.nested_test.test_property.should eq("camel")
+      object.many_nested_test.first.test_property.should eq("camel")
+    end
+    
+    JSON.parse(NestedTest.new(Test.new("camel")).to_json(case: CAJ::Cases::Camel)).tap do |json|
+      json["nestedTest"]?.try &.as_h?.try &.["testProperty"]?.should eq("camel")
+      json["manyNestedTest"]?.try &.as_a?.try &.first?.try &.as_h?.try &.["testProperty"]?.should eq("camel")
+    end
   end
 
 end
