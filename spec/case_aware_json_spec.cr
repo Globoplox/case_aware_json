@@ -15,6 +15,31 @@ class NestedTest
   end
 end
 
+class DiscriminatorTest
+  include JSON::Serializable
+  property some_name : String
+
+  class Circle < DiscriminatorTest
+    property some_radius : Int32
+
+    class Deeper
+      include JSON::Serializable
+      property some_deep_props : String
+    end
+
+    property some_test : Deeper
+  end
+
+  class Square < DiscriminatorTest
+    property some_edge : Int32
+  end
+
+  class Whatever < DiscriminatorTest
+  end
+
+  use_json_discriminator "some_name", { "square" => Square, "circle" => Circle }#, default: Whatever                                                           
+end
+
 describe CAJ do
 
   it "can serialize to camelcase" do
@@ -83,6 +108,19 @@ describe CAJ do
       json["nestedTest"]?.try &.as_h?.try &.["testProperty"]?.should eq("camel")
       json["manyNestedTest"]?.try &.as_a?.try &.first?.try &.as_h?.try &.["testProperty"]?.should eq("camel")
     end
+  end
+
+  it "can deserialize classes that use `JSON::Serializable::use_json_discriminator`" do
+    DiscriminatorTest.from_json(%({"someName": "circle", "someRadius": 28, "someTest": {"someDeepProps": "foobar"}}), case: CAJ::Cases::Camel).tap do |it|
+      it.should be_a(DiscriminatorTest::Circle)
+      it.as(DiscriminatorTest::Circle).some_radius.should eq(28)
+      it.as(DiscriminatorTest::Circle).some_test.some_deep_props.should eq("foobar")
+    end
+    
+    DiscriminatorTest.from_json(%({"someName": "square", "someEdge": 56}), case: CAJ::Cases::Camel).tap do |it|
+      it.should be_a(DiscriminatorTest::Square)
+      it.as(DiscriminatorTest::Square).some_edge.should eq(56)
+    end    
   end
 
 end
