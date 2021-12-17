@@ -40,7 +40,7 @@ module CAJ
       @convention = _convention.is_a?(Cases) ? _convention : Cases.parse _convention.to_s
     end
     
-    protected def format_key(key)
+    def format_key(key)
       case @convention
       in Cases::Snake then key
       in Cases::Camel then key.camelcase lower: true
