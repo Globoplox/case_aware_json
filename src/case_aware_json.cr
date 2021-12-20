@@ -1,5 +1,6 @@
 require "json"
 require "./discriminator"
+require "./from_json"
 
 module CAJ
   extend self
