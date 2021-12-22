@@ -1,6 +1,7 @@
 require "json"
 require "./discriminator"
 require "./from_json"
+require "./case_converter"
 
 module CAJ
   extend self
