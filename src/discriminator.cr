@@ -78,7 +78,7 @@ module JSON
         unless discriminator_value
           raise ::JSON::SerializableError.new("Missing JSON discriminator field '{{field.id}}'", to_s, nil, *location, nil)
         end
-
+        
         case discriminator_value
         {% for key, value in mapping %}
           {% if mapping.is_a?(NamedTupleLiteral) %}

@@ -1,3 +1,13 @@
+class JSON::UnionParseException < JSON::ParseException
+  def initialize(target, source, causes, line_number, column_number)
+    message = <<-EOS
+      Couldn't parse #{target} from #{source}, all alternatives failed:
+      #{causes.map(&.message).join '\n'}
+    EOS
+    super(message, line_number, column_number)
+  end
+end
+  
 # Override some stdlib methods to hanlde convention
 def Union.new(pull : JSON::PullParser)
   location = pull.location
@@ -43,6 +53,7 @@ def Union.new(pull : JSON::PullParser)
       return {{non_primitives[0]}}.new(pull)
     {% else %}
       string = pull.read_raw
+      exceptions = [] of JSON::ParseException
       {% for type in non_primitives %}
         begin
           if pull.responds_to? :convention            
@@ -50,11 +61,11 @@ def Union.new(pull : JSON::PullParser)
           else
             return {{type}}.from_json(string)
           end
-        rescue JSON::ParseException
-          # Ignore
+        rescue ex : JSON::ParseException
+          exceptions << ex
         end
       {% end %}
-      raise JSON::ParseException.new("Couldn't parse #{self} from #{string}", *location)
+      raise JSON::UnionParseException.new(self, string, exceptions, *location)
     {% end %}
   {% end %}
 end
